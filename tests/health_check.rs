@@ -1,13 +1,13 @@
 use email_newsletter::config::{DatabaseSettings, get_configuration};
 use email_newsletter::startup::run;
 use email_newsletter::telemetry::{get_subscriber, init_subscriber};
-use once_cell::sync::Lazy;
 use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
+use std::sync::LazyLock;
 use uuid::Uuid;
 
-static TRACING: Lazy<()> = Lazy::new(|| {
+static TRACING: LazyLock<()> = LazyLock::new(|| {
     let default_filter_name = "info".to_string();
     let subcriber_name = "email_newsletter".to_string();
 
@@ -26,7 +26,7 @@ pub struct TestApp {
 }
 
 async fn spawn_app() -> TestApp {
-    Lazy::force(&TRACING);
+    LazyLock::force(&TRACING);
 
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
