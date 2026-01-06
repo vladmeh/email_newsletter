@@ -22,13 +22,12 @@ DB_PORT="${POSTGRES_PORT:=5432}"
 
 if [[ -z "${SKIP_DOCKER}" ]]
 then
-  docker run \
+  docker run --name newsletter_db \
     -e POSTGRES_USER="${DB_USER}" \
     -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
     -e POSTGRES_DB="${DB_NAME}" \
     -p "${DB_PORT}":5432 \
-    -d postgres \
-    postgres -N 1000
+    -d postgres -N 1000
 fi
 
 export PGPASSWORD="${DB_PASSWORD}"
