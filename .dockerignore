@@ -5,6 +5,7 @@ target/
 deploy/
 tests/
 Dockerfile
+Makefile
 scripts/
 migrations/
 
