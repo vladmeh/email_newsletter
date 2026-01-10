@@ -1,20 +1,22 @@
-use email_newsletter::config::{DatabaseSettings, get_configuration};
-use email_newsletter::startup::run;
-use email_newsletter::telemetry::{get_subscriber, init_subscriber};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use std::sync::LazyLock;
 use uuid::Uuid;
 
+use email_newsletter::config::{DatabaseSettings, get_configuration};
+use email_newsletter::email_client::EmailClient;
+use email_newsletter::startup::run;
+use email_newsletter::telemetry::{get_subscriber, init_subscriber};
+
 static TRACING: LazyLock<()> = LazyLock::new(|| {
     let default_filter_name = "info".to_string();
-    let subcriber_name = "email_newsletter".to_string();
+    let subscriber_name = "email_newsletter".to_string();
 
     if std::env::var("TEST_LOG").is_ok() {
-        let subscriber = get_subscriber(subcriber_name, default_filter_name, std::io::stdout);
+        let subscriber = get_subscriber(subscriber_name, default_filter_name, std::io::stdout);
         init_subscriber(subscriber);
     } else {
-        let subscriber = get_subscriber(subcriber_name, default_filter_name, std::io::sink);
+        let subscriber = get_subscriber(subscriber_name, default_filter_name, std::io::sink);
         init_subscriber(subscriber);
     }
 });
@@ -35,7 +37,14 @@ async fn spawn_app() -> TestApp {
     config.database.database_name = Uuid::new_v4().to_string();
     let connection_pool = configure_database(&config.database).await;
 
-    let server = run(listener, connection_pool.clone()).expect("Failed to bind address");
+    let sender_email = config
+        .email_client
+        .sender()
+        .expect("Failed to read sender email");
+    let email_client = EmailClient::new(config.email_client.base_url, sender_email);
+
+    let server =
+        run(listener, connection_pool.clone(), email_client).expect("Failed to bind address");
     tokio::spawn(server);
 
     TestApp {

@@ -26,6 +26,7 @@ tracing-actix-web = "0.7"
 secrecy = { version = "0.10", features = ["serde"] }
 unicode-segmentation = "1"
 validator = "0.20"
+reqwest = { version = "0.13", default-features = false, features = ["json"] }
 
 [dependencies.sqlx]
 version = "0.8"
@@ -40,7 +41,6 @@ features = [
 ]
 
 [dev-dependencies]
-reqwest = { version = "0.12", features = ["json"] }
 claims = "0.8"
 fake = "4"
 quickcheck = "1.0.3"
