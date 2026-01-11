@@ -18,10 +18,13 @@ async fn main() -> std::io::Result<()> {
         .email_client
         .sender()
         .expect("Failed to read sender email");
+
+    let timeout = config.email_client.timeout();
     let email_client = EmailClient::new(
         config.email_client.base_url,
         sender_email,
         config.email_client.auth_token,
+        timeout,
     );
 
     let address = format!("{}:{}", config.application.host, config.application.port);

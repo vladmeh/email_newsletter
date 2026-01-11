@@ -10,11 +10,13 @@ pub struct EmailClient {
 }
 
 impl EmailClient {
-    pub fn new(base_url: String, sender: SubscriberEmail, auth_token: SecretString) -> Self {
-        let http_client = Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
-            .build()
-            .unwrap();
+    pub fn new(
+        base_url: String,
+        sender: SubscriberEmail,
+        auth_token: SecretString,
+        timeout: std::time::Duration,
+    ) -> Self {
+        let http_client = Client::builder().timeout(timeout).build().unwrap();
 
         Self {
             http_client,
@@ -106,6 +108,7 @@ mod tests {
             base_url,
             email(),
             SecretString::from(Faker.fake::<String>()),
+            std::time::Duration::from_millis(200),
         )
     }
 
