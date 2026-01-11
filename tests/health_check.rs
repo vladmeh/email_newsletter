@@ -41,7 +41,11 @@ async fn spawn_app() -> TestApp {
         .email_client
         .sender()
         .expect("Failed to read sender email");
-    let email_client = EmailClient::new(config.email_client.base_url, sender_email);
+    let email_client = EmailClient::new(
+        config.email_client.base_url,
+        sender_email,
+        config.email_client.auth_token,
+    );
 
     let server =
         run(listener, connection_pool.clone(), email_client).expect("Failed to bind address");
