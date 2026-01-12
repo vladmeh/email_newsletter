@@ -6,7 +6,6 @@ use wiremock::{Mock, ResponseTemplate};
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let app = spawn_app().await;
     let body = "name=le%20guin&email=ursula_le_guin%40test.tt";
-
     Mock::given(path("/email"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
@@ -16,14 +15,29 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     let response = app.post_subscription(body.into()).await;
 
     assert!(response.status().is_success());
+}
 
-    let saved = sqlx::query!("SELECT email, name FROM subscriptions")
+#[tokio::test]
+async fn subscribe_persists_the_new_subscriber() {
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40test.tt";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    app.post_subscription(body.into()).await;
+
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions")
         .fetch_one(&app.db_pool)
         .await
         .expect("Failed to fetch one subscription");
 
     assert_eq!("ursula_le_guin@test.tt", saved.email);
     assert_eq!("le guin", saved.name);
+    assert_eq!("pending_confirmation", saved.status);
 }
 
 #[tokio::test]
