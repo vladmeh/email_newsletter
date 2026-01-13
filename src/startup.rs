@@ -31,7 +31,8 @@ impl Application {
             timeout,
         );
 
-        let address = format!("{}:{}", config.application.host, config.application.port);
+        let address =
+            format!("{}:{}", config.application.host, config.application.port);
 
         let listener = TcpListener::bind(address)?;
         let port = listener.local_addr()?.port();

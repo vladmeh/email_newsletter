@@ -4,7 +4,11 @@ use email_newsletter::telemetry::{get_subscriber, init_subscriber};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let subscriber = get_subscriber("email_newsletter".into(), "info".into(), std::io::stdout);
+    let subscriber = get_subscriber(
+        "email_newsletter".into(),
+        "info".into(),
+        std::io::stdout,
+    );
     init_subscriber(subscriber);
 
     let config = get_configuration().expect("Failed to read configuration");
