@@ -12,15 +12,10 @@ static TRACING: LazyLock<()> = LazyLock::new(|| {
     let subscriber_name = "email_newsletter".to_string();
 
     if std::env::var("TEST_LOG").is_ok() {
-        let subscriber = get_subscriber(
-            subscriber_name,
-            default_filter_name,
-            std::io::stdout,
-        );
+        let subscriber = get_subscriber(subscriber_name, default_filter_name, std::io::stdout);
         init_subscriber(subscriber);
     } else {
-        let subscriber =
-            get_subscriber(subscriber_name, default_filter_name, std::io::sink);
+        let subscriber = get_subscriber(subscriber_name, default_filter_name, std::io::sink);
         init_subscriber(subscriber);
     }
 });
@@ -48,12 +43,8 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub fn get_confirmation_links(
-        &self,
-        email_request: &wiremock::Request,
-    ) -> ConfirmationLinks {
-        let body: serde_json::Value =
-            serde_json::from_slice(&email_request.body).unwrap();
+    pub fn get_confirmation_links(&self, email_request: &wiremock::Request) -> ConfirmationLinks {
+        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
 
         let get_link = |s: &str| {
             let links: Vec<_> = linkify::LinkFinder::new()
@@ -83,8 +74,7 @@ pub async fn spawn_app() -> TestApp {
     let email_server = MockServer::start().await;
 
     let config = {
-        let mut conf =
-            get_configuration().expect("Failed to read configuration");
+        let mut conf = get_configuration().expect("Failed to read configuration");
         conf.database.database_name = Uuid::new_v4().to_string();
         conf.application.port = 0;
         conf.email_client.base_url = email_server.uri();
@@ -112,9 +102,7 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
         .await
         .expect("Failed to connect to database");
     connection
-        .execute(
-            format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str(),
-        )
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
         .await
         .expect("Failed to create database");
 
