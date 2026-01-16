@@ -34,50 +34,25 @@ impl std::fmt::Debug for StoreTokenError {
     }
 }
 
+#[derive(thiserror::Error)]
 pub enum SubscribeError {
+    #[error("{0}")]
     ValidationError(String),
-    StoreTokenError(StoreTokenError),
-    SendEmailError(reqwest::Error),
-    PoolError(sqlx::Error),
-    InsertSubscriberError(sqlx::Error),
-    TransactionCommitError(sqlx::Error),
-}
-
-impl std::fmt::Display for SubscribeError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::ValidationError(err) => write!(f, "{}", err),
-            Self::StoreTokenError(_) => write!(
-                f,
-                "Failed to store the confirmation token for a new subscriber."
-            ),
-            Self::SendEmailError(_) => write!(f, "Failed to send a confirmation email."),
-            Self::PoolError(_) => write!(f, "Failed to acquire a Postgres connection."),
-            Self::InsertSubscriberError(_) => write!(f, "Failed to insert in the database."),
-            Self::TransactionCommitError(_) => write!(
-                f,
-                "Failed to commit SQL transaction to store a new subscriber."
-            ),
-        }
-    }
+    #[error("Failed to store the confirmation token for a new subscriber.")]
+    StoreTokenError(#[from] StoreTokenError),
+    #[error("Failed to send a confirmation email.")]
+    SendEmailError(#[from] reqwest::Error),
+    #[error("Failed to acquire a Postgres connection.")]
+    PoolError(#[source] sqlx::Error),
+    #[error("Failed to insert in the database.")]
+    InsertSubscriberError(#[source] sqlx::Error),
+    #[error("Failed to commit SQL transaction to store a new subscriber.")]
+    TransactionCommitError(#[source] sqlx::Error),
 }
 
 impl std::fmt::Debug for SubscribeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         error_chain_fmt(self, f)
-    }
-}
-
-impl std::error::Error for SubscribeError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::ValidationError(_) => None,
-            Self::StoreTokenError(err) => Some(err),
-            Self::SendEmailError(err) => Some(err),
-            Self::PoolError(err) => Some(err),
-            Self::InsertSubscriberError(err) => Some(err),
-            Self::TransactionCommitError(err) => Some(err),
-        }
     }
 }
 
@@ -91,24 +66,6 @@ impl ResponseError for SubscribeError {
             | Self::StoreTokenError(_)
             | Self::SendEmailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
-    }
-}
-
-impl From<reqwest::Error> for SubscribeError {
-    fn from(err: reqwest::Error) -> Self {
-        Self::SendEmailError(err)
-    }
-}
-
-impl From<StoreTokenError> for SubscribeError {
-    fn from(err: StoreTokenError) -> Self {
-        Self::StoreTokenError(err)
-    }
-}
-
-impl From<String> for SubscribeError {
-    fn from(err: String) -> Self {
-        Self::ValidationError(err)
     }
 }
 
@@ -142,7 +99,7 @@ pub async fn subscribe(
     email_client: web::Data<EmailClient>,
     base_url: web::Data<ApplicationBaseUrl>,
 ) -> Result<HttpResponse, SubscribeError> {
-    let new_subscriber = form.0.try_into()?;
+    let new_subscriber = form.0.try_into().map_err(SubscribeError::ValidationError)?;
     let mut transaction = pool.begin().await.map_err(SubscribeError::PoolError)?;
     let subscriber_id = insert_subscriber(&mut transaction, &new_subscriber)
         .await
