@@ -3,8 +3,8 @@ use std::sync::LazyLock;
 use uuid::Uuid;
 use wiremock::MockServer;
 
-use email_newsletter::config::{get_configuration, DatabaseSettings};
-use email_newsletter::startup::{get_connection_pool, Application};
+use email_newsletter::config::{DatabaseSettings, get_configuration};
+use email_newsletter::startup::{Application, get_connection_pool};
 use email_newsletter::telemetry::{get_subscriber, init_subscriber};
 
 static TRACING: LazyLock<()> = LazyLock::new(|| {
