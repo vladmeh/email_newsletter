@@ -3,8 +3,8 @@ use crate::email_client::EmailClient;
 use crate::routes::error_chain_fmt;
 use crate::telemetry::spawn_blocking_with_tracing;
 use actix_web::http::header::{HeaderMap, HeaderValue};
-use actix_web::http::{header, StatusCode};
-use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
+use actix_web::http::{StatusCode, header};
+use actix_web::{HttpRequest, HttpResponse, ResponseError, web};
 use anyhow::Context;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use base64::Engine;
@@ -78,10 +78,20 @@ async fn validate_credentials(
     credentials: Credentials,
     pool: &PgPool,
 ) -> Result<uuid::Uuid, PublishError> {
-    let (user_id, expected_password_hash) = get_store_credentials(&credentials.username, pool)
-        .await
-        .map_err(PublishError::UnexpectedError)?
-        .ok_or_else(|| PublishError::AuthError(anyhow::anyhow!("Unknown username")))?;
+    let mut user_id = None;
+    let mut expected_password_hash = SecretString::from(
+        "$argon2id$v=19$m=15000,t=2,p=1$\
+            gZiV/M1gPc22ElAH/Jh1Hw$\
+            CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno",
+    );
+    if let Some((stored_user_id, stored_password_hash)) =
+        get_store_credentials(&credentials.username, pool)
+            .await
+            .map_err(PublishError::UnexpectedError)?
+    {
+        user_id = Some(stored_user_id);
+        expected_password_hash = stored_password_hash;
+    }
 
     spawn_blocking_with_tracing(move || {
         verify_password_hash(expected_password_hash, credentials.password)
@@ -90,7 +100,7 @@ async fn validate_credentials(
     .context("Failed to span blocking task.")
     .map_err(PublishError::UnexpectedError)??;
 
-    Ok(user_id)
+    user_id.ok_or_else(|| PublishError::AuthError(anyhow::anyhow!("Unknown username.")))
 }
 
 #[tracing::instrument(
