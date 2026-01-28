@@ -12,6 +12,7 @@ name = "email_newsletter"
 
 [dependencies]
 actix-web = "4"
+actix-web-flash-messages = { version = "0.5", features = ["cookies"] }
 config = { version = "0.15", default-features = false, features = ["yaml"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde = "1.0"
@@ -31,8 +32,6 @@ thiserror = "2"
 anyhow = "1"
 base64 = "0.22"
 argon2 = { version = "0.5", features = ["std"] }
-urlencoding = "2"
-htmlescape = "0.3"
 
 [dependencies.reqwest]
 version = "0.13"
