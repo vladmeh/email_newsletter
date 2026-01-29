@@ -9,6 +9,7 @@ pub struct Settings {
     pub database: DatabaseSettings,
     pub application: AppSettings,
     pub email_client: EmailClientSettings,
+    pub redis_uri: SecretString,
 }
 
 #[derive(serde::Deserialize, Clone)]

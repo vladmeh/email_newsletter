@@ -13,6 +13,7 @@ name = "email_newsletter"
 [dependencies]
 actix-web = "4"
 actix-web-flash-messages = { version = "0.5", features = ["cookies"] }
+actix-session = { version = "0.11", features = ["redis-session-rustls"] }
 config = { version = "0.15", default-features = false, features = ["yaml"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde = "1.0"
