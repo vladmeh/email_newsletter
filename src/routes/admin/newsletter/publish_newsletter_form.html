@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="text/html; charset=utf-8" http-equiv="content-type">
+    <title>Publish News Letter</title>
+</head>
+<body>
+<form action="/admin/newsletters" method="post">
+    <label>Title:<br>
+        <input name="title"
+               id="title"
+               placeholder="Enter the issue title"
+               type="text"
+        >
+    </label>
+    <br>
+    <label>Plain text content:<br>
+        <textarea cols="50"
+                  name="text_content"
+                  placeholder="Enter the content in plain text"
+                  rows="20"
+        ></textarea>
+    </label>
+    <br>
+    <label>HTML content:<br>
+        <textarea cols="50"
+                  name="html_content"
+                  placeholder="Enter the content in HTML format"
+                  rows="20"
+        ></textarea>
+    </label>
+    <br>
+    <button type="submit">Publish</button>
+</form>
+<p><a href="/admin/dashboard">&lt;- Back</a></p>
+</body>
+</html>
