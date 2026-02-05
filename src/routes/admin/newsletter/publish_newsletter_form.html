@@ -7,6 +7,7 @@
 </head>
 <body>
 <form action="/admin/newsletters" method="post">
+    <input type="hidden" name="idempotency_key" value="key">
     <label>Title:<br>
         <input name="title"
                id="title"
