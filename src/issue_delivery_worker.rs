@@ -1,10 +1,30 @@
+use crate::config::Settings;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
+use crate::startup::get_connection_pool;
 use sqlx::{Executor, PgPool, Postgres, Transaction};
 use std::time::Duration;
 use tracing::Span;
 use tracing::field::display;
 use uuid::Uuid;
+
+pub async fn run_worker_until_stopped(config: Settings) -> Result<(), anyhow::Error> {
+    let connection_pool = get_connection_pool(&config.database);
+
+    let sender_email = config
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+    let timeout = config.email_client.timeout();
+    let email_client = EmailClient::new(
+        config.email_client.base_url,
+        sender_email,
+        config.email_client.auth_token,
+        timeout,
+    );
+
+    worker_loop(connection_pool, email_client).await
+}
 
 enum ExecutionOutcome {
     TaskCompleted,
