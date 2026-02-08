@@ -1,7 +1,6 @@
 use crate::authentication::UserId;
 use crate::idempotency::{IdempotencyKey, NextAction, save_response, try_processing};
 use crate::utils::{e400, e500, see_other};
-use actix_web::web::ReqData;
 use actix_web::{HttpResponse, web};
 use actix_web_flash_messages::FlashMessage;
 use anyhow::Context;
@@ -24,7 +23,7 @@ pub struct FormData {
 pub async fn publish_newsletter(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
-    user_id: ReqData<UserId>,
+    user_id: web::ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let user_id = user_id.into_inner();
     let FormData {
@@ -102,7 +101,7 @@ async fn enqueue_delivery_tasks(
             r#"
             INSERT INTO issue_delivery_queue (newsletter_issue_id, subscriber_email)
             SELECT $1, email FROM subscriptions
-            WHERE status = 'confirmer'
+            WHERE status = 'confirmed'
             "#,
             newsletter_issue_id
         ))

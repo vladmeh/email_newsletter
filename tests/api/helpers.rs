@@ -2,6 +2,8 @@ use argon2::password_hash::SaltString;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
 use email_newsletter::config::{DatabaseSettings, get_configuration};
+use email_newsletter::email_client::EmailClient;
+use email_newsletter::issue_delivery_worker::{ExecutionOutcome, try_execute_task};
 use email_newsletter::startup::{Application, get_connection_pool};
 use email_newsletter::telemetry::{get_subscriber, init_subscriber};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -29,9 +31,22 @@ pub struct TestApp {
     pub port: u16,
     pub test_user: TestUser,
     pub api_client: reqwest::Client,
+    pub email_client: EmailClient,
 }
 
 impl TestApp {
+    pub async fn dispatch_all_pending_emails(&self) {
+        loop {
+            if let ExecutionOutcome::EmptyQueue =
+                try_execute_task(&self.db_pool, &self.email_client)
+                    .await
+                    .unwrap()
+            {
+                break;
+            }
+        }
+    }
+
     pub async fn post_subscription(&self, body: String) -> reqwest::Response {
         self.api_client
             .post(format!("{}/subscriptions", &self.address))
@@ -242,6 +257,7 @@ pub async fn spawn_app() -> TestApp {
         email_server,
         test_user: TestUser::generate(),
         api_client: client,
+        email_client: config.email_client.client(),
     };
 
     test_app.test_user.store(&test_app.db_pool).await;
